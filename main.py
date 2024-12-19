@@ -70,19 +70,19 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 if json_data.get("type") == "heartbeat_ack":
                     # 收到心跳回应
                     phone_info[client_id]["last_heartbeat"] = time.time()
-                elif "log" in json_:
+                elif "log" in json_
                     log_entry = {"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "message": json_data["log"]}
                     phone_info[client_id]["logs"].append(log_entry)
                     # 限制日志数量
                     phone_info[client_id]["logs"] = phone_info[client_id]["logs"][-MAX_LOG_ENTRIES:]
                     await broadcast_phone_list()
-                elif "model" in json_:
+                elif "model" in json_
                     phone_info[client_id]["model"] = json_data["model"]
                     await broadcast_phone_list()
-                elif "script_list" in json_:
+                elif "script_list" in json_
                     phone_info[client_id]["script_list"] = json_data["script_list"]
                     await broadcast_phone_list()
-                elif "script_name" in json_data and "content" in json_data and "client_id" in json_:
+                elif "script_name" in json_data and "content" in json_data and "client_id" in json_
                     # 收到手机端发送的脚本内容
                     if json_data["client_id"] == "server":
                         # 仅当请求来自服务器端时才处理

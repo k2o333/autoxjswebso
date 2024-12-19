@@ -82,7 +82,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 elif "script_list" in json_data:
                     phone_info[client_id]["script_list"] = json_data["script_list"]
                     await broadcast_phone_list()
-                elif "script_name" in json_data and "content" in json_data and "client_id" in json_data
+                elif "script_name" in json_data and "content" in json_data and "client_id" in json_data:
                     # 收到手机端发送的脚本内容
                     if json_data["client_id"] == "server":
                         # 仅当请求来自服务器端时才处理

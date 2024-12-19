@@ -33,6 +33,9 @@ function connect() {
             if (scriptContent) {
                 ws.send(JSON.stringify({script_name: data.get_script, content: scriptContent, client_id: data.client_id}));
             }
+        } else if (data.type === "heartbeat") {
+            // 回应心跳
+            ws.send(JSON.stringify({type: "heartbeat_ack"}));
         }
     };
 
@@ -68,7 +71,8 @@ function getScriptContent(scriptName) {
 events.observeLog();
 events.onLog(function(logMsg) {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({log: logMsg}));
+        const timestamp = new Date().toLocaleString();
+        ws.send(JSON.stringify({log: `[${timestamp}] ${logMsg}`}));
     }
 });
 

@@ -2,6 +2,7 @@ from typing import Dict, List
 import json
 import os
 import time
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,6 +35,23 @@ scripts: Dict[str, str] = {}
 SCRIPT_DIR = "scripts"
 os.makedirs(SCRIPT_DIR, exist_ok=True)
 
+# 心跳间隔（秒）
+HEARTBEAT_INTERVAL = 30
+
+# 最大日志条数
+MAX_LOG_ENTRIES = 100
+
+async def send_heartbeat(websocket: WebSocket, client_id: str):
+    while True:
+        try:
+            await websocket.send_text(json.dumps({"type": "heartbeat"}))
+            await asyncio.sleep(HEARTBEAT_INTERVAL)
+        except (WebSocketDisconnect, ConnectionClosedOK):
+            break
+        except Exception as e:
+            print(f"Error sending heartbeat to {client_id}: {e}")
+            break
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
@@ -41,22 +59,35 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
     phone_info[client_id] = {"status": "online", "model": "unknown", "script": "None", "logs": []}
     print(f"Client {client_id} connected")
     await broadcast_phone_list()
+    # 启动心跳
+    asyncio.create_task(send_heartbeat(websocket, client_id))
     try:
         while True:
             data = await websocket.receive_text()
             print(f"Received from {client_id}: {data}")
             try:
                 json_data = json.loads(data)
-                if "log" in json_
+                if json_data.get("type") == "heartbeat_ack":
+                    # 收到心跳回应
+                    phone_info[client_id]["last_heartbeat"] = time.time()
+                elif "log" in json_:
                     log_entry = {"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "message": json_data["log"]}
                     phone_info[client_id]["logs"].append(log_entry)
+                    # 限制日志数量
+                    phone_info[client_id]["logs"] = phone_info[client_id]["logs"][-MAX_LOG_ENTRIES:]
                     await broadcast_phone_list()
-                elif "model" in json_
+                elif "model" in json_:
                     phone_info[client_id]["model"] = json_data["model"]
                     await broadcast_phone_list()
-                elif "script_list" in json_
+                elif "script_list" in json_:
                     phone_info[client_id]["script_list"] = json_data["script_list"]
                     await broadcast_phone_list()
+                elif "script_name" in json_data and "content" in json_data and "client_id" in json_:
+                    # 收到手机端发送的脚本内容
+                    if json_data["client_id"] == "server":
+                        # 仅当请求来自服务器端时才处理
+                        scripts[json_data["script_name"]] = json_data["content"]
+                        print(f"Received script content for {json_data['script_name']} from {client_id}")
             except json.JSONDecodeError:
                 print(f"Invalid JSON format: {data}")
     except WebSocketDisconnect:
@@ -67,6 +98,18 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         del connected_clients[client_id]
         phone_info[client_id]["status"] = "offline"
         await broadcast_phone_list()
+
+async def check_connections():
+    while True:
+        now = time.time()
+        for client_id, info in phone_info.items():
+            if info["status"] == "online":
+                last_heartbeat = info.get("last_heartbeat")
+                if last_heartbeat and now - last_heartbeat > HEARTBEAT_INTERVAL * 3:
+                    print(f"Client {client_id} seems offline (no heartbeat)")
+                    info["status"] = "offline"
+                    await broadcast_phone_list()
+        await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 async def broadcast_phone_list():
     simplified_phone_info = {
@@ -132,3 +175,8 @@ async def get_phone_logs(client_id: str):
         return {"logs": phone_info[client_id]["logs"]}
     else:
         return {"error": "Client not found"}
+
+# 启动后台任务
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(check_connections())

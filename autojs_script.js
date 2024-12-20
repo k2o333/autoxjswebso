@@ -11,11 +11,11 @@ runtime.requestPermissions(permissions);
 
 function connectToServer() {
     // 服务器地址
-    const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
+    const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + selfId;
 
     // 创建WebSocket连接
-    ws = new WebSocketClient(new URI(serverUrl), {
-        onOpen: function (handshake) {
+    ws = new WebSocketClient(new URI(serverUrl)) {
+        onOpen(handshake) {
             console.log('Connected to server');
             // 发送设备型号
             ws.send(JSON.stringify({ type: "init", id: selfId }));
@@ -23,34 +23,33 @@ function connectToServer() {
             // 发送脚本列表
             const scriptList = files.listDir("/sdcard/脚本/");
             ws.send(JSON.stringify({ script_list: scriptList }));
-        },
+        }
 
-        onMessage: function (message) {
-            log('Received message from server:', message);
+        onMessage(message) {
+            console.log('Received message from server:', message);
             const data = JSON.parse(message);
             if (data.script) {
                 // 执行接收到的脚本
                 try {
                     engines.execScript("remote_script", data.script);
                     // 记录日志
-                    log("Executing script: " + data.name);
+                    console.log("Executing script: " + data.name);
                     ws.send(JSON.stringify({ log: "Executing script: " + data.name, id: selfId }));
                 } catch (e) {
-                    log("Error executing script: " + e);
                     console.error("Error executing script: " + e);
                 }
             }
-        },
+        }
 
-        onClose: function (code, reason, remote) {
+        onClose(code, reason, remote) {
             console.log('Disconnected from server');
             // 尝试重新连接
             setTimeout(connectToServer, 5000);
-        },
+        }
 
-        onError: function (ex) {
+        onError(ex) {
             console.error('WebSocket error: ' + ex);
-        },
+        }
     };
 
     ws.connect();

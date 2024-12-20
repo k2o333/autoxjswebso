@@ -14,7 +14,7 @@ function connectToServer() {
     const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
 
     // 创建WebSocket连接
-    ws = new WebSocketClient(new URI(serverUrl)) {
+    ws = new WebSocketClient(new URI(serverUrl), {
         onOpen: function (handshake) {
             console.log('Connected to server');
             // 发送设备型号

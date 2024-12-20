@@ -46,6 +46,10 @@ HEARTBEAT_INTERVAL = 30
 # 最大日志条数
 MAX_LOG_ENTRIES = 100
 
+@app.get("/")
+async def read_root():
+    return FileResponse("static/index.html")
+
 async def send_heartbeat(websocket: WebSocket, client_id: str):
     while True:
         try:

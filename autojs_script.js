@@ -13,32 +13,18 @@ function connectToServer() {
     const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
 
     // 创建WebSocket连接
-    ws = new WebSocket(serverUrl);
-
-    ws.onopen = (event) => {
-        console.log('Connected to server');
-        // 发送设备型号
-        ws.send(JSON.stringify({ model: device.model }));
-        // 发送脚本列表
-        const scriptList = files.listDir("/sdcard/脚本/");
-        ws.send(JSON.stringify({ script_list: scriptList }));
-    };
-
-    ws.onmessage = (event) => {
-        console.log('Received message from server:', event.data);
-    };
-
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-    };
-
-    ws.onclose = (event) => {
-        console.log('WebSocket connection closed:', event);
-    };
-}
+    ws = new WebSocketClient(new URI(serverUrl)) {
+        onOpen: function (handshake) {
+            console.log('Connected to server');
+            // 发送设备型号
+            ws.send(JSON.stringify({ model: device.model }));
+            // 发送脚本列表
+            const scriptList = files.listDir("/sdcard/脚本/");
+            ws.send(JSON.stringify({ script_list: scriptList }));
+        },
 
         onMessage: function (message) {
-            console.log('Received message: ' + message);
+            console.log('Received message from server:', message);
             const data = JSON.parse(message);
             if (data.script) {
                 // 执行接收到的脚本

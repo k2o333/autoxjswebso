@@ -47,7 +47,7 @@
         let selectedPhoneId = null;
 
         function connect() {
-            ws = new WebSocket(`ws://k2o3.tpddns.cn:22101/ws/server`);
+            ws = new WebSocket(`ws://k2o3.tpddns.cn:20501/ws/server`);
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 if (data.phone_list) {

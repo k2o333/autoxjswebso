@@ -6,7 +6,7 @@ runtime.requestPermissions(permissions);
 
 function connectToServer() {
     // 服务器地址
-    const serverUrl = 'ws://k2o3.tpddns.cn:22101/ws/' + device.buildId;
+    const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
 
     // 创建WebSocket连接
     ws = new WebSocket(serverUrl);

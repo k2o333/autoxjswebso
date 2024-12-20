@@ -1,3 +1,7 @@
+import importlib.util
+if importlib.util.find_spec("fastapi") is None:
+    print("FastAPI is not installed. Please run 'pip install fastapi uvicorn[standard]' to install.")
+    exit(1)
 from typing import Dict, List
 import json
 import os

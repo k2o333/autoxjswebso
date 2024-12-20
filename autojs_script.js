@@ -1,3 +1,7 @@
+importClass(org.java_websocket.client.WebSocketClient);
+importClass(org.java_websocket.handshake.ServerHandshake);
+importClass(java.net.URI);
+
 let ws = null;
 
 // 请求权限
@@ -9,39 +13,42 @@ function connectToServer() {
     const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
 
     // 创建WebSocket连接
-    ws = new WebSocket(serverUrl);
+    let serverUri = new URI(serverUrl);
+    ws = new WebSocketClient(serverUri) {
+        onOpen: function (handshakedata) {
+            console.log('Connected to server');
+            // 发送设备型号
+            this.send(JSON.stringify({ model: device.model }));
+            // 发送脚本列表
+            const scriptList = files.listDir("/sdcard/脚本/");
+            this.send(JSON.stringify({ script_list: scriptList }));
+        },
 
-    ws.onopen = function(event) {
-        console.log('Connected to server');
-        // 发送设备型号
-        ws.send(JSON.stringify({model: device.model}));
-        // 发送脚本列表
-        const scriptList = files.listDir("/sdcard/脚本/");
-        ws.send(JSON.stringify({script_list: scriptList}));
-    };
-
-    ws.onmessage = function(event) {
-        console.log('Received message: ' + event.data);
-        const data = JSON.parse(event.data);
-        if (data.script) {
-            // 执行接收到的脚本
-            try {
-                engines.execScript("remote_script", data.script);
-            } catch (e) {
-                console.error("Error executing script: " + e);
+        onMessage: function (message) {
+            console.log('Received message: ' + message);
+            const data = JSON.parse(message);
+            if (data.script) {
+                // 执行接收到的脚本
+                try {
+                    engines.execScript("remote_script", data.script);
+                } catch (e) {
+                    console.error("Error executing script: " + e);
+                }
             }
-        }
+        },
+
+        onClose: function (code, reason, remote) {
+            console.log('Disconnected from server');
+            // 尝试重新连接
+            setTimeout(connectToServer, 5000);
+        },
+
+        onError: function (ex) {
+            console.error('WebSocket error: ' + ex);
+        },
     };
 
-    ws.onerror = function(event) {
-        console.error('WebSocket error: ' + event);
-    };
-
-    ws.onclose = function(event) {
-        console.log('Disconnected from server');
-        // 尝试重新连接
-        setTimeout(connectToServer, 5000);
-    };
+    ws.connect();
 }
 
 // 启动连接

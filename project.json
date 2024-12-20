@@ -1,0 +1,14 @@
+{
+  "name": "My AutoX App",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "packageName": "com.example.myautoxapp",
+  "permissions": [
+    "android.permission.INTERNET",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO"
+    // ... 其他需要的权限
+  ]
+}

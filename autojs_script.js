@@ -1,7 +1,9 @@
+// /root/axj/autojs_script.js
+
 // 请求权限
 var permissions = [
     "android.permission.CAMERA",
-    "android.permission.READ_CONTACTS"
+    "android.permission.RECORD_AUDIO"
 ];
 
 runtime.requestPermissions(permissions);

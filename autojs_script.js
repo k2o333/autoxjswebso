@@ -1,5 +1,5 @@
 // 服务器地址
-const serverUrl = "ws://k2o3.tpddns.cn:22101/ws/";
+const serverUrl = "ws://k2o3.tpddns.cn:20501/ws/";
 const phoneId = device.serial; // 获取设备唯一标识符
 
 let ws = null;

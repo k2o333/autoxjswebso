@@ -23,7 +23,7 @@ function connectToServer() {
             // 发送脚本列表
             const scriptList = files.listDir("/sdcard/脚本/");
             ws.send(JSON.stringify({ script_list: scriptList }));
-        }
+        },
 
         onMessage(message) {
             console.log('Received message from server:', message);
@@ -39,13 +39,13 @@ function connectToServer() {
                     console.error("Error executing script: " + e);
                 }
             }
-        }
+        },
 
         onClose(code, reason, remote) {
             console.log('Disconnected from server');
             // 尝试重新连接
             setTimeout(connectToServer, 5000);
-        }
+        },
 
         onError(ex) {
             console.error('WebSocket error: ' + ex);

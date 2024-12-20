@@ -3,9 +3,10 @@ importClass(org.java_websocket.handshake.ServerHandshake);
 importClass(java.net.URI);
 
 let ws = null;
+const selfId = device.buildId;
 
 // 请求权限
-let permissions = ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"];
+const permissions = ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"];
 runtime.requestPermissions(permissions);
 
 function connectToServer() {
@@ -17,6 +18,7 @@ function connectToServer() {
         onOpen: function (handshake) {
             console.log('Connected to server');
             // 发送设备型号
+            ws.send(JSON.stringify({ type: "init", id: selfId }));
             ws.send(JSON.stringify({ model: device.model }));
             // 发送脚本列表
             const scriptList = files.listDir("/sdcard/脚本/");
@@ -24,13 +26,17 @@ function connectToServer() {
         },
 
         onMessage: function (message) {
-            console.log('Received message from server:', message);
+            log('Received message from server:', message);
             const data = JSON.parse(message);
             if (data.script) {
                 // 执行接收到的脚本
                 try {
                     engines.execScript("remote_script", data.script);
+                    // 记录日志
+                    log("Executing script: " + data.name);
+                    ws.send(JSON.stringify({ log: "Executing script: " + data.name, id: selfId }));
                 } catch (e) {
+                    log("Error executing script: " + e);
                     console.error("Error executing script: " + e);
                 }
             }
@@ -54,4 +60,9 @@ function connectToServer() {
 connectToServer();
 
 // 保持脚本运行
-setInterval(()=>{}, 1000);
+setInterval(() => {
+    // 发送心跳包
+    if (ws && ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify({ type: "heartbeat", id: selfId }));
+    }
+}, 10000);

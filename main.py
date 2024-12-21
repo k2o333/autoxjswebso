@@ -113,7 +113,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         )
                     else:
                         print(f"Client {req_client_id} not connected")
-                elif "script_content" in json_data and "script_name" in json_data:
+                elif "script_content" in json_data and "script_name" in json_
                     # 收到手机端发送的脚本内容
                     script_name = json_data["script_name"]
                     script_content = json_data["script_content"]

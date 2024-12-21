@@ -103,6 +103,32 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         print(
                             f"Received script content for {json_data['script_name']} from {client_id}"
                         )
+                elif "get_script" in json_data and "client_id" in json_
+                    req_client_id = json_data["client_id"]
+                    req_script_name = json_data["get_script"]
+                    if req_client_id in connected_clients:
+                        # 向手机端请求脚本内容
+                        await connected_clients[req_client_id].send_text(
+                            json.dumps({"get_script": req_script_name})
+                        )
+                    else:
+                        print(f"Client {req_client_id} not connected")
+                elif "script_content" in json_data and "script_name" in json_data:
+                    # 收到手机端发送的脚本内容
+                    script_name = json_data["script_name"]
+                    script_content = json_data["script_content"]
+                    # 将脚本内容发送给请求的客户端（这里假设是 server）
+                    if "server" in connected_clients:
+                        await connected_clients["server"].send_text(
+                            json.dumps(
+                                {
+                                    "script_name": script_name,
+                                    "content": script_content,
+                                }
+                            )
+                        )
+                    else:
+                        print("Server client not connected")
             except json.JSONDecodeError:
                 print(f"Invalid JSON format: {data}")
     except WebSocketDisconnect:
@@ -178,6 +204,13 @@ async def get_phone_logs(client_id: str):
         return {"logs": phone_info[client_id]["logs"]}
     else:
         return {"error": "Client not found"}
+
+@app.get("/phone_info/{client_id}/scripts")
+async def get_phone_scripts(client_id: str):
+    if client_id in phone_info and "script_list" in phone_info[client_id]:
+        return {"scripts": phone_info[client_id]["script_list"]}
+    else:
+        return {"error": "Client not found or script list not available"}
 
 @app.on_event("startup")
 async def startup_event():

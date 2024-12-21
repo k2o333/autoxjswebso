@@ -9,7 +9,6 @@
     "android.permission.ACCESS_FINE_LOCATION",
     "android.permission.CAMERA",
     "android.permission.RECORD_AUDIO"
-    // ... 其他需要的权限
   ],
   "useFeatures": [
     "java-websocket.jar"

@@ -194,4 +194,3 @@ async def check_connections():
                     info["status"] = "offline"
                     await broadcast_phone_list()
         await asyncio.sleep(HEARTBEAT_INTERVAL)
-

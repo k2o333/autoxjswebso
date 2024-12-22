@@ -4,6 +4,8 @@ let WebSocketListener = Packages.okhttp3.WebSocketListener;
 let MediaType = Packages.okhttp3.MediaType;
 let RequestBody = Packages.okhttp3.RequestBody;
 
+let ws; // Ensure ws is defined in a broader scope
+
 function connectToServer() {
     // 服务器地址
     const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
@@ -18,6 +20,7 @@ function connectToServer() {
     let listener = new WebSocketListener({
         onOpen: function(webSocket, response) {
             console.log('Connected to server');
+            ws = webSocket; // Assign the WebSocket instance to the global ws variable
             // 发送设备型号
             webSocket.send(JSON.stringify({model: device.model}));
             // 发送脚本列表
@@ -53,6 +56,7 @@ function connectToServer() {
 
         onClosed: function(webSocket, code, reason) {
             console.log('Disconnected from server');
+            ws = null; // Clear the WebSocket instance
             // 尝试重新连接
             setTimeout(connectToServer, 5000);
         },
@@ -60,11 +64,12 @@ function connectToServer() {
         onFailure: function(webSocket, t, response) {
             console.error('WebSocket error: ' + t);
             sendError(webSocket, 'WebSocket error: ' + t);
+            ws = null; // Clear the WebSocket instance
         }
     });
 
     // 创建WebSocket连接
-    let ws = client.newWebSocket(request, listener);
+    ws = client.newWebSocket(request, listener); // Assign the WebSocket instance to the global ws variable
 }
 
 // 发送脚本列表
@@ -80,28 +85,30 @@ function sendScriptList(ws) {
 
 // 发送心跳
 function sendHeartbeat() {
-    if (ws && ws.connected) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({type: "heartbeat"}));
+    } else {
+        console.log("WebSocket is not open, cannot send heartbeat.");
     }
 }
 
 // 发送错误信息
 function sendError(ws, message) {
-    if (ws && ws.connected) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({log: "ERROR: " + message}));
     }
 }
 
 // 重定向 console.log 和 console.error
 console.log = function(message) {
-    if (ws && ws.connected) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({log: message}));
     }
     // 可以在这里添加本地日志记录
 };
 
 console.error = function(message) {
-    if (ws && ws.connected) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({log: "ERROR: " + message}));
     }
     // 可以在这里添加本地日志记录

@@ -77,7 +77,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 json_data = json.loads(data)
                 if json_data.get("type") == "heartbeat_ack":
                     phone_info[client_id]["last_heartbeat"] = time.time()
-                elif "log" in json_
+                elif "log" in json_data:
                     log_entry = {
                         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "message": json_data["log"],
@@ -87,10 +87,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         -MAX_LOG_ENTRIES:
                     ]
                     await broadcast_phone_list()
-                elif "model" in json_
+                elif "model" in json_data:
                     phone_info[client_id]["model"] = json_data["model"]
                     await broadcast_phone_list()
-                elif "script_list" in json_
+                elif "script_list" in json_data:
                     phone_info[client_id]["script_list"] = json_data["script_list"]
                     await broadcast_phone_list()
                 elif (
@@ -103,7 +103,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         print(
                             f"Received script content for {json_data['script_name']} from {client_id}"
                         )
-                elif "get_script" in json_data and "client_id" in json_
+                elif "get_script" in json_data and "client_id" in json_data:
                     req_client_id = json_data["client_id"]
                     req_script_name = json_data["get_script"]
                     if req_client_id in connected_clients:
@@ -113,7 +113,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         )
                     else:
                         print(f"Client {req_client_id} not connected")
-                elif "script_content" in json_data and "script_name" in json_
+                elif "script_content" in json_data and "script_name" in json_data:
                     # 收到手机端发送的脚本内容
                     script_name = json_data["script_name"]
                     script_content = json_data["script_content"]

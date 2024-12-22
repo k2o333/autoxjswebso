@@ -11,6 +11,6 @@
     "android.permission.RECORD_AUDIO"
   ],
   "useFeatures": [
-    "java-websocket.jar"
+    "okhttp3.jar"
   ]
 }

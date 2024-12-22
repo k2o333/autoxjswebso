@@ -1,4 +1,3 @@
-let Java = require('java');
 let OkHttpClient = Java.use('okhttp3.OkHttpClient');
 let Request = Java.use('okhttp3.Request');
 let WebSocketListener = Java.use('okhttp3.WebSocketListener');

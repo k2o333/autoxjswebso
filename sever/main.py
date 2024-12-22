@@ -8,6 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from websockets.exceptions import ConnectionClosedOK
 
+print(f"当前工作目录: {os.getcwd()}")  # 添加这行
+
 app = FastAPI()
 
 # Allow all origins for CORS

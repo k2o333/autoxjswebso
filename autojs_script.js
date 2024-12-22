@@ -1,8 +1,8 @@
-let OkHttpClient = Java.use('okhttp3.OkHttpClient');
-let Request = Java.use('okhttp3.Request');
-let WebSocketListener = Java.use('okhttp3.WebSocketListener');
-let MediaType = Java.use('okhttp3.MediaType');
-let RequestBody = Java.use('okhttp3.RequestBody');
+let OkHttpClient = Packages.okhttp3.OkHttpClient;
+let Request = Packages.okhttp3.Request;
+let WebSocketListener = Packages.okhttp3.WebSocketListener;
+let MediaType = Packages.okhttp3.MediaType;
+let RequestBody = Packages.okhttp3.RequestBody;
 
 function connectToServer() {
     // 服务器地址

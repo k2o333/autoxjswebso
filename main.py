@@ -231,3 +231,7 @@ async def check_connections():
                     info["status"] = "offline"
                     await broadcast_phone_list()
         await asyncio.sleep(HEARTBEAT_INTERVAL)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto.js Control Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { display: flex; }
+        .phone-list { width: 30%; margin-right: 20px; }
+        .phone-details { width: 70%; }
+        .phone-entry { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; cursor: pointer; }
+        .phone-entry.online { background-color: #e6ffe6; }
+        .phone-entry.offline { background-color: #ffe6e6; }
+        .script-list { list-style-type: none; padding: 0; }
+        .script-entry { border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer; }
+        .log-entry { border-bottom: 1px solid #eee; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Auto.js Control Panel</h1>
+    <div class="container">
+        <div class="phone-list">
+            <h2>Phones</h2>
+            <div id="phoneList"></div>
+        </div>
+        <div class="phone-details">
+            <h2>Phone Details</h2>
+            <div id="phoneDetails">Select a phone to view details</div>
+        </div>
+    </div>
+    <div>
+        <h2>Upload Script</h2>
+        <input type="file" id="scriptFile">
+        <input type="text" id="scriptName" placeholder="Script Name">
+        <button onclick="uploadScript()">Upload</button>
+    </div>
+    <div>
+        <h2>Send Script</h2>
+        <select id="targetPhone">
+            <option value="all">All</option>
+        </select>
+        <select id="scriptSelect"></select>
+        <button onclick="sendScript()">Send</button>
+    </div>
+
+    <script>
+        let ws;
+        let selectedPhoneId = null;
+
+        function connect() {
+            ws = new WebSocket(`ws://k2o3.tpddns.cn:20501/ws/server`);
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.phone_list) {
+                    updatePhoneList(data.phone_list);
+                    updateTargetPhoneSelect(data.phone_list);
+                }
+            };
+        }
+
+        function updatePhoneList(phoneList) {
+            const phoneListDiv = document.getElementById('phoneList');
+            phoneListDiv.innerHTML = '';
+            for (const clientId in phoneList) {
+                const phone = phoneList[clientId];
+                const phoneEntry = document.createElement('div');
+                phoneEntry.classList.add('phone-entry');
+                phoneEntry.classList.add(phone.status);
+                phoneEntry.textContent = `${clientId} (${phone.model}) - ${phone.status} - ${phone.script} - ${phone.latest_log}`;
+                phoneEntry.onclick = () => showPhoneDetails(clientId);
+                phoneListDiv.appendChild(phoneEntry);
+            }
+        }
+
+        function updateTargetPhoneSelect(phoneList) {
+            const targetPhoneSelect = document.getElementById('targetPhone');
+            targetPhoneSelect.innerHTML = '<option value="all">All</option>';
+            for (const clientId in phoneList) {
+                const option = document.createElement('option');
+                option.value = clientId;
+                option.textContent = clientId;
+                targetPhoneSelect.appendChild(option);
+            }
+        }
+
+        function showPhoneDetails(clientId) {
+            selectedPhoneId = clientId;
+            fetch(`/phone_info/${clientId}/logs`)
+                .then(response => response.json())
+                .then(data => {
+                    const phoneDetailsDiv = document.getElementById('phoneDetails');
+                    phoneDetailsDiv.innerHTML = `<h3>Logs for ${clientId}</h3>`;
+                    const logsDiv = document.createElement('div');
+                    data.logs.forEach(log => {
+                        const logEntry = document.createElement('div');
+                        logEntry.classList.add('log-entry');
+                        logEntry.textContent = `${log.timestamp}: ${log.message}`;
+                        logsDiv.appendChild(logEntry);
+                    });
+                    phoneDetailsDiv.appendChild(logsDiv);
+
+                    // 添加脚本列表
+                    phoneDetailsDiv.innerHTML += `<h3>Scripts on ${clientId}</h3>`;
+                    const scriptList = document.createElement('ul');
+                    scriptList.classList.add('script-list');
+                    phoneList[clientId].script_list.forEach(scriptName => {
+                        const scriptItem = document.createElement('li');
+                        scriptItem.classList.add('script-entry');
+                        scriptItem.textContent = scriptName;
+                        scriptItem.onclick = () => showScriptContent(clientId, scriptName);
+                        scriptList.appendChild(scriptItem);
+                    });
+                    phoneDetailsDiv.appendChild(scriptList);
+                });
+        }
+
+        function showScriptContent(clientId, scriptName) {
+            // 这里应该向手机端请求脚本内容，而不是从服务端获取
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({get_script: scriptName, client_id: clientId}));
+            }
+        }
+
+        function uploadScript() {
+            const scriptFile = document.getElementById('scriptFile').files[0];
+            const scriptName = document.getElementById('scriptName').value;
+            const formData = new FormData();
+            formData.append('script_file', scriptFile);
+            formData.append('script_name', scriptName);
+            fetch('/upload_script/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                updateScriptSelect();
+            });
+        }
+
+        function sendScript() {
+            const targetPhone = document.getElementById('targetPhone').value;
+            const scriptName = document.getElementById('scriptSelect').value;
+            const formData = new FormData();
+            formData.append('client_id', targetPhone);
+            formData.append('script_name', scriptName);
+            fetch('/send_script/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => console.log(data));
+        }
+
+        function updateScriptSelect() {
+            fetch('/scripts/')
+            .then(response => response.json())
+            .then(data => {
+                const scriptSelect = document.getElementById('scriptSelect');
+                scriptSelect.innerHTML = '';
+                data.scripts.forEach(script => {
+                    const option = document.createElement('option');
+                    option.value = script;
+                    option.textContent = script;
+                    scriptSelect.appendChild(option);
+                });
+            });
+        }
+
+        // 初始化
+        connect();
+        updateScriptSelect();
+    </script>
+</body>
+</html>

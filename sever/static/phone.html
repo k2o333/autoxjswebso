@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phone Details</title>
+    <style>
+        .log-entry { border-bottom: 1px solid #eee; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Phone Details</h1>
+    <div id="phoneDetails"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('clientId');
+        let ws;
+
+        function connect() {
+            ws = new WebSocket(`ws://k2o3.tpddns.cn:22101/ws/server`);
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.phone_logs && data.phone_logs[clientId]) {
+                    updateLogs(data.phone_logs[clientId]);
+                }
+            };
+        }
+
+        function updateLogs(logs) {
+            const phoneDetailsDiv = document.getElementById('phoneDetails');
+            phoneDetailsDiv.innerHTML = '';
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.classList.add('log-entry');
+                logEntry.textContent = `${log.timestamp}: ${log.message}`;
+                phoneDetailsDiv.appendChild(logEntry);
+            });
+        }
+
+        connect();
+    </script>
+</body>
+</html>

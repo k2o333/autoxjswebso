@@ -15,7 +15,7 @@ function connectToServer() {
     let request = new Request.Builder().url(serverUrl).build();
 
     // 创建WebSocket监听器
-    let listener = new WebSocketListener() {
+    let listener = new WebSocketListener({
         onOpen: function(webSocket, response) {
             console.log('Connected to server');
             // 发送设备型号
@@ -61,7 +61,7 @@ function connectToServer() {
             console.error('WebSocket error: ' + t);
             sendError(webSocket, 'WebSocket error: ' + t);
         }
-    };
+    });
 
     // 创建WebSocket连接
     let ws = client.newWebSocket(request, listener);

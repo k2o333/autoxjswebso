@@ -9,62 +9,62 @@ function connectToServer() {
     const serverUrl = 'ws://k2o3.tpddns.cn:20501/ws/' + device.buildId;
 
     // 创建OkHttpClient实例
-    let client = OkHttpClient.$new();
+    let client = new OkHttpClient();
 
     // 创建请求
-    let request = Request.$new(serverUrl);
+    let request = new Request.Builder().url(serverUrl).build();
 
     // 创建WebSocket监听器
-    let listener = WebSocketListener.$new();
+    let listener = new WebSocketListener() {
+        onOpen: function(webSocket, response) {
+            console.log('Connected to server');
+            // 发送设备型号
+            webSocket.send(JSON.stringify({model: device.model}));
+            // 发送脚本列表
+            sendScriptList(webSocket);
+            // 发送心跳
+            setInterval(sendHeartbeat, 30000);
+        },
 
-    // 创建WebSocket连接
-    let ws = client.newWebSocket(request, listener);
-
-    listener.onOpen = function(webSocket, response) {
-        console.log('Connected to server');
-        // 发送设备型号
-        ws.send(JSON.stringify({model: device.model}));
-        // 发送脚本列表
-        sendScriptList(ws);
-        // 发送心跳
-        setInterval(sendHeartbeat, 30000);
-    };
-
-    listener.onMessage = function(webSocket, text) {
-        console.log('Received message: ' + text);
-        const data = JSON.parse(text);
-        if (data.script) {
-            // 执行接收到的脚本
-            try {
-                engines.execScript("remote_script", data.script);
-            } catch (e) {
-                console.error("Error executing script: " + e);
-                sendError(ws, "Error executing script: " + e); // 发送错误信息
+        onMessage: function(webSocket, text) {
+            console.log('Received message: ' + text);
+            const data = JSON.parse(text);
+            if (data.script) {
+                // 执行接收到的脚本
+                try {
+                    engines.execScript("remote_script", data.script);
+                } catch (e) {
+                    console.error("Error executing script: " + e);
+                    sendError(webSocket, "Error executing script: " + e); // 发送错误信息
+                }
+            } else if (data.type === "heartbeat") {
+                webSocket.send(JSON.stringify({type: "heartbeat_ack"}));
+            } else if (data.get_script) {
+                const scriptName = data.get_script;
+                const scriptPath = files.join("/sdcard/脚本/", scriptName); // 假设脚本都存放在 /sdcard/脚本/ 目录下
+                if (files.exists(scriptPath)) {
+                    const content = files.read(scriptPath);
+                    webSocket.send(JSON.stringify({script_name: scriptName, script_content: content}));
+                } else {
+                    sendError(webSocket, "Script not found: " + scriptName);
+                }
             }
-        } else if (data.type === "heartbeat") {
-            ws.send(JSON.stringify({type: "heartbeat_ack"}));
-        } else if (data.get_script) {
-            const scriptName = data.get_script;
-            const scriptPath = files.join("/sdcard/脚本/", scriptName); // 假设脚本都存放在 /sdcard/脚本/ 目录下
-            if (files.exists(scriptPath)) {
-                const content = files.read(scriptPath);
-                ws.send(JSON.stringify({script_name: scriptName, script_content: content}));
-            } else {
-                sendError(ws, "Script not found: " + scriptName);
-            }
+        },
+
+        onClosed: function(webSocket, code, reason) {
+            console.log('Disconnected from server');
+            // 尝试重新连接
+            setTimeout(connectToServer, 5000);
+        },
+
+        onFailure: function(webSocket, t, response) {
+            console.error('WebSocket error: ' + t);
+            sendError(webSocket, 'WebSocket error: ' + t);
         }
     };
 
-    listener.onClosed = function(webSocket, code, reason) {
-        console.log('Disconnected from server');
-        // 尝试重新连接
-        setTimeout(connectToServer, 5000);
-    };
-
-    listener.onFailure = function(webSocket, t, response) {
-        console.error('WebSocket error: ' + t);
-        sendError(ws, 'WebSocket error: ' + t);
-    };
+    // 创建WebSocket连接
+    let ws = client.newWebSocket(request, listener);
 }
 
 // 发送脚本列表

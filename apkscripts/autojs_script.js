@@ -21,7 +21,7 @@ function connectToServer() {
         onOpen: function(webSocket, response) {
             console.log('Connected to server');
             ws = webSocket; // Assign the WebSocket instance to the global ws variable
-            // 发送设备型号
+            console.log('Device model:', device.model); // 添加这行
             webSocket.send(JSON.stringify({model: device.model}));
             // 发送脚本列表
             sendScriptList(webSocket);

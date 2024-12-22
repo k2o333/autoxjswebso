@@ -92,6 +92,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     ]
                     await broadcast_phone_list()
                 elif "model" in json_data:
+                    print(f"Received model info from {client_id}: {json_data['model']}")  # 添加这行
                     phone_info[client_id]["model"] = json_data["model"]
                     await broadcast_phone_list()
                 elif "script_list" in json_data:

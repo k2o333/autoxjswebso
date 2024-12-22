@@ -1,3 +1,4 @@
+let Java = require('java');
 let WebSocket = Java.use('org.java_websocket.client.WebSocketClient');
 let URI = Java.use('java.net.URI');
 

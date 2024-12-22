@@ -48,7 +48,9 @@ async def read_root():
 async def send_heartbeat(websocket: WebSocket, client_id: str):
     while True:
         try:
-            await websocket.send_text(json.dumps({"type": "heartbeat"}))
+            # 检查连接状态
+            if websocket.client_state.name == "CONNECTED":
+                await websocket.send_text(json.dumps({"type": "heartbeat"}))
             await asyncio.sleep(HEARTBEAT_INTERVAL)
         except (WebSocketDisconnect, ConnectionClosedOK):
             break
@@ -151,7 +153,9 @@ async def broadcast_phone_list():
     }
     for client in connected_clients.values():
         try:
-            await client.send_text(json.dumps({"phone_list": simplified_phone_info}))
+            # 再次确认连接状态
+            if client.client_state.name == "CONNECTED":
+                await client.send_text(json.dumps({"phone_list": simplified_phone_info}))
         except Exception as e:
             print(f"Error broadcasting to a client: {e}")
 
